@@ -4,3 +4,12 @@
 {
 font-family: "nasalization", sans-serif;
 }
+
+@theme
+{
+    --color-space-background: #2B2B2B;
+    --color-space-tekst: #F5F5FF;
+    --color-space-button: #1749A5;
+    --color-space-hover: #6B65A5;
+    --color-space-highlight: #66CD85;
+}
