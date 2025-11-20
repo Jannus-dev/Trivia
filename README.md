@@ -1,8 +1,31 @@
-# Nuxt Minimal Starter
+
+# Frontend Trivia Website
+
+Dit is de GitHub pagina voor Project 4 van startsemester HBO ICT op Fontys Tilburg.
+
+## Authors
+
+- [@Jannus_Dev](https://www.linkedin.com/in/jan-honing/)
+- [@Niel](#)
+
+## Color Reference
+
+| Color             | Hex                                                             |
+| ----------------- |-----------------------------------------------------------------|
+| Background | #2B2B2B                                                         |
+| Font | #F5F5FF                                                         |
+| Button | #6B65A5 |
+| Button hover | #1749A5 |
+| Accent | #66CD85 |
+
+
+## Installation
+
+### Nuxt Minimal Starter
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
-## Setup
+#### Setup
 
 Make sure to install dependencies:
 
@@ -20,7 +43,7 @@ yarn install
 bun install
 ```
 
-## Development Server
+#### Development Server
 
 Start the development server on `http://localhost:3000`:
 
@@ -38,7 +61,7 @@ yarn dev
 bun run dev
 ```
 
-## Production
+#### Production
 
 Build the application for production:
 
