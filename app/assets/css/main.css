@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+*
+{
+font-family: "nasalization", sans-serif;
+}
+
+@theme
+{
+    --color-space-background: #2B2B2B;
+    --color-space-tekst: #F5F5FF;
+    --color-space-blue: #1749A5;
+    --color-space-purple: #6B65A5;
+    --color-space-highlight: #66CD85;
+}
+
+p, a, h1, h2
+{
+    color: var(--color-space-tekst);
+}
+
+body
+{
+    background-color: var(--color-space-background);
+}
