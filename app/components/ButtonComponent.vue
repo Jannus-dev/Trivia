@@ -6,7 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <NuxtLink :to="to" class="bg-[url('/assets/img/Button.png')] bg-center bg-contain bg-no-repeat text-center text-2xl w-1/7 pr-5 pl-5 pt-7 pb-7 rounded-2xl whitespace-pre-wrap hover:bg-[url('/assets/img/ButtonHover.png')]">
+  <NuxtLink :to="to" class="bg-[url('/assets/img/3.png')] ease-in-out bg-center bg-cover bg-no-repeat text-center text-2xl w-1/7 pr-7 pl-7 pt-7 pb-7 rounded-2xl whitespace-pre-wrap hover:bg-[url('/assets/img/2.png')] transform transition-transform hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:transform-none duration-600">
     {{ label }}
   </NuxtLink>
 </template>
