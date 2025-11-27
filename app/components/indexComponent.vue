@@ -15,7 +15,7 @@
         label="Start Trivia"
         to="#"
     />
-    <XXLButtonComponent
+    <SmalButtonComponent
         label="Start Trivia"
         to="#"
         class="mt-10"
