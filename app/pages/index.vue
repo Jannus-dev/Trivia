@@ -7,6 +7,7 @@
   <div id="stars2"></div>
   <div id="stars3"></div>
   <indexComponent />
+  <FooterComponent/>
 </template>
 
 <style scoped>
