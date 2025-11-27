@@ -9,7 +9,7 @@
     label="Algemene Kennis"
     vraag="Vraag 1"
 />
-
+<FooterComponent/>
 </template>
 
 <style scoped>
