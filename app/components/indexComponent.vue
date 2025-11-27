@@ -11,15 +11,13 @@
     <p class="text-center text-6xl underline decoration-space-blue decoration-5 mb-5">
       One Universe, Endless Trivia
     </p>
-    <ButtonComponent
+    <div class="w-full flex justify-center mt-6">
+      <ButtonComponent
         label="Start Trivia"
-        to="#"
-    />
-    <SmalButtonComponent
-        label="Start Trivia"
-        to="#"
-        class="mt-10"
-    />
+        to="/categorie"
+      />
+    </div>
+    
   </div>
 </template>
 

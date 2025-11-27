@@ -4,7 +4,7 @@
 
 <template>
 
-    <div class="flex justify-center mb-0 my-175">
+    <div class="flex justify-center mb-0 my-25">
       <div class="h-px border-2 rounded-2xl border-space-highlight w-100/100"></div>
     </div>
 
