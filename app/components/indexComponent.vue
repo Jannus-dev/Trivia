@@ -15,6 +15,11 @@
         label="Start Trivia"
         to="#"
     />
+    <BigButtonComponent
+        label="Start Trivia"
+        to="#"
+        class="mt-10"
+    />
   </div>
 </template>
 
