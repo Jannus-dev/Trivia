@@ -14,10 +14,9 @@
     <div class="w-full flex justify-center mt-6">
       <ButtonComponent
         label="Start Trivia"
-        to="/categorie"
-      />
-    </div>
-    
+        to="categorie"
+    />
+  </div>
   </div>
 </template>
 
