@@ -4,15 +4,23 @@
 
 <template>
 
-    <div class="flex justify-center mb-0 my-25">
-      <div class="h-px border-2 rounded-2xl border-space-highlight w-100/100"></div>
-    </div>
+<!--    <div class="flex justify-center mb-0 my-25">-->
+<!--&lt;!&ndash;      <div class="h-px border-2 rounded-2xl border-space-highlight w-full"></div>&ndash;&gt;-->
+<!--    </div>-->
 
   <footer class="w-full bg-[url('../img/Space3.jpg')]
       bg-cover
       bg-center
-      bg-no-repeat text-space-tekst py-4 px-4 h-3/4"
-      style="background-blend-mode: overlay; background-color: rgba(0, 0, 0, 0.35)">  
+      bg-no-repeat
+      text-space-tekst
+      py-4
+      px-4
+      h-3/4
+      border-t-2
+      border-t-space-highlight end
+      mt-5"
+      style="background-blend-mode: overlay; background-color: rgba(0, 0, 0, 0.35)">
+
     
     <div class="max-w-8xl mx-auto">
       
