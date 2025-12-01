@@ -17,7 +17,7 @@
       </div>
 
       <div class="flex items-center my-4">
-        <smalButtonComponent label="Home" to="/categorie" />
+        <smalButtonComponent label="Home" to="/" />
       </div>
       
     </div>
