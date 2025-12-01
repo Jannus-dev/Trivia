@@ -74,7 +74,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  
+<div class="min-h-screen">
 <HeaderComponent/>
 <categorieLabelComponent :label="category" vraag="Vraag 1" />
 
@@ -86,7 +86,7 @@ onBeforeUnmount(() => {
     <XXLButtonComponent label="Antwoord D" :to="antwoord4Route" />
   </div>
 </div>
-
+</div>
 <FooterComponent/>
 </template>
 

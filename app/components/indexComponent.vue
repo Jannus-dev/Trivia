@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center content-center">
+  <div class="flex flex-col items-center justify-center content-center min-h-screen">
    <img src="../assets/img/Logo.svg" alt="Logo" class="self-center" />
    <h1 class="text-center text-9xl underline decoration-space-highlight decoration-8" >
       OmniVerse

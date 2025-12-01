@@ -8,7 +8,7 @@ const totalQuestions = 5
 </script>
 
 <template>
-  
+ <div class="min-h-screen">
 <HeaderComponent/>
 
 <CategorieLabelComponent
@@ -33,7 +33,7 @@ vraag=""
 </div>
 <br></br><br></br><br></br><br></br>
 
-
+ </div>
 <FooterComponent/>
 
 </template>
