@@ -27,7 +27,11 @@ const gaVerder = () => {
 <template>
   <div class="min-h-screen">
     <HeaderComponent />
-
+    <div class="starfield">
+      <div id="stars"></div>
+      <div id="stars2"></div>
+      <div id="stars3"></div>
+    </div>
     <CategorieLabelComponent label="Resultaten" vraag="" />
 
     <h1 class="text-center text-4xl mt-10 underline decoration-space-blue">

@@ -102,7 +102,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown))
 <template>
   <div class="min-h-screen">
     <HeaderComponent />
-
+    <div class="starfield">
+      <div id="stars"></div>
+      <div id="stars2"></div>
+      <div id="stars3"></div>
+    </div>
     <CategorieLabelComponent :label="categoryName" vraag="Vraag" />
 
     <div v-if="loading" class="mt-10 text-center">Vraag wordt geladen...</div>

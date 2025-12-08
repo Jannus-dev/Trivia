@@ -14,6 +14,11 @@ const { data: categories } = await useAsyncData('categories', async () => {
 
 <template>
   <HeaderComponent />
+  <div class="starfield">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>
+  </div>
   <br />
 
   <p class="text-space-tekst text-center text-4xl underline decoration-space-blue decoration-2 rounded-2xl">
