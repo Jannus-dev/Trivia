@@ -2,6 +2,8 @@
 import { useRoute } from '#imports'
 const route = useRoute()
 
+import { supabase } from '../../utils/supabase'
+
 import { onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
