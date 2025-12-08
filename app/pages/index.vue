@@ -1,10 +1,20 @@
 <script setup lang="ts">
-
+onMounted(() => {
+  localStorage.removeItem('score')
+  localStorage.removeItem('questionCount')
+  localStorage.removeItem('answeredQuestions')
+  localStorage.removeItem('lastCategory')
+})
 </script>
 
 <template>
-<h1>test</h1>
-  <p>test</p>
+  <div class="starfield">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>
+  </div>
+  <indexComponent/>
+  <FooterComponent/>
 </template>
 
 <style scoped>
