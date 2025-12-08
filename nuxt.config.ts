@@ -9,4 +9,10 @@ export default defineNuxtConfig({
             tailwindcss(),
         ],
     },
+    runtimeConfig: {
+        public: {
+            supabaseUrl: process.env.SUPABASE_URL,
+            supabaseKey: process.env.SUPABASE_KEY
+        }
+    }
 });

@@ -1,97 +1,150 @@
 <script setup lang="ts">
-import { useRoute } from '#imports'
+import { useRoute, useRouter } from '#imports'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+
+const { $supabase } = useNuxtApp()
 const route = useRoute()
+const router = useRouter()
 
-import { supabase } from '../../utils/supabase'
+const categoryName = ref(route.query.category ? String(route.query.category) : '')
+const question = ref<any | null>(null)
+const choices = ref<any[]>([])
+const loading = ref(true)
 
-import { onMounted, onBeforeUnmount, ref } from 'vue';
-import { useRouter } from 'vue-router';
+const MAX_QUESTIONS = 5
 
-// 1. Initialiseer de Nuxt Router
-const router = useRouter();
+async function fetchCategoryId() {
+  const { data, error } = await $supabase
+      .from('category')
+      .select('id')
+      .eq('name', categoryName.value)
+      .single()
 
-// 2. Definieer de 'category' variabele (pas dit aan op basis van hoe je deze variabele vult)
-// Dit is nodig om de volledige URL's op te bouwen.
-const category = ref(route.query.category ? String(route.query.category) : 'Onbekende categorie');
+  if (error || !data) {
+    console.error('Categorie niet gevonden:', error)
+    return null
+  }
+  return data.id
+}
 
-// 3. Definieer de vier specifieke target URLs
-// Deze URL's zijn statisch voor de huidige vraag en komen exact overeen met de ':to' props.
-const antwoord1Route = `/resultaten?category=${encodeURIComponent(category.value)}&score=1`;
-const antwoord2Route = `/resultaten?category=${encodeURIComponent(category.value)}&score=0`;
-const antwoord3Route = `/resultaten?category=${encodeURIComponent(category.value)}&score=0`;
-const antwoord4Route = `/resultaten?category=${encodeURIComponent(category.value)}&score=0`;
+async function fetchRandomQuestion() {
+  loading.value = true
+  const categoryId = await fetchCategoryId()
+  if (!categoryId) {
+    loading.value = false
+    return
+  }
 
-/**
- * Stuurt de gebruiker door naar de resultatenpagina via de router.
- * Dit simuleert de actie van het klikken op de knop.
- * @param targetRoute - De URL (de waarde van de :to prop) waarnaar genavigeerd moet worden.
- */
-const navigeerNaarAntwoord = (targetRoute: string) => {
-  // Gebruik router.push() om de navigatie programmatisch uit te voeren
-  router.push(targetRoute);
-};
+  const { data: questions, error } = await $supabase
+      .from('question')
+      .select('*')
+      .eq('category_id', categoryId)
 
-/**
- * Hoofdfunctie om toetsaanslagen te verwerken.
- */
+  if (error || !questions?.length) {
+    console.error('Geen vragen gevonden:', error)
+    loading.value = false
+    return
+  }
+
+  const answeredIds = JSON.parse(localStorage.getItem('answeredQuestions') || '[]')
+  const remainingQuestions = questions.filter(q => !answeredIds.includes(q.id))
+  if (!remainingQuestions.length) {
+    console.warn('Alle vragen in deze categorie zijn al beantwoord')
+    loading.value = false
+    return
+  }
+
+  const randIndex = Math.floor(Math.random() * remainingQuestions.length)
+  question.value = remainingQuestions[randIndex]
+
+  const { data: choiceData } = await $supabase
+      .from('choice')
+      .select('*')
+      .eq('question_id', question.value.id)
+
+  choices.value = shuffleArray(choiceData ?? [])
+
+// Hulpfunctie om een array te husselen
+  function shuffleArray(array: any[]) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[array[i], array[j]] = [array[j], array[i]]
+    }
+    return array
+  }
+
+
+  choices.value = choiceData ?? []
+  loading.value = false
+}
+
+const handleChoiceSelect = (choice: any) => {
+  const isCorrect = choice.is_correct ? 1 : 0
+  const currentScore = parseInt(localStorage.getItem('score') || '0')
+  const currentCount = parseInt(localStorage.getItem('questionCount') || '0')
+
+  localStorage.setItem('score', String(currentScore + isCorrect))
+  localStorage.setItem('questionCount', String(currentCount + 1))
+
+  const answered = JSON.parse(localStorage.getItem('answeredQuestions') || '[]')
+  answered.push(question.value.id)
+  localStorage.setItem('answeredQuestions', JSON.stringify(answered))
+
+  localStorage.setItem('lastCategory', categoryName.value)
+
+  router.push(`/resultaten?correct=${isCorrect}`)
+}
+
+// keyboard shortcuts
 const handleKeyDown = (event: KeyboardEvent) => {
-  // AANBEVOLEN: Negeer de toetsaanslag als de gebruiker in een invoerveld typt
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement).tagName)) {
-    return;
+  if (['INPUT','TEXTAREA','SELECT'].includes((event.target as HTMLElement).tagName)) return
+  const num = parseInt(event.key)
+  if (num >= 1 && num <= choices.value.length) {
+    handleChoiceSelect(choices.value[num - 1])
   }
+}
 
-  // Wijs de toetsen 1 t/m 4 toe aan de bijbehorende URL
-  switch (event.key) {
-    case '1':
-      event.preventDefault(); // Voorkom standaard browseracties
-      navigeerNaarAntwoord(antwoord1Route);
-      break;
-    case '2':
-      event.preventDefault();
-      navigeerNaarAntwoord(antwoord2Route);
-      break;
-    case '3':
-      event.preventDefault();
-      navigeerNaarAntwoord(antwoord3Route);
-      break;
-    case '4':
-      event.preventDefault();
-      navigeerNaarAntwoord(antwoord4Route);
-      break;
-    default:
-      break;
-  }
-};
-
-// 🌟 Lifecycle Hook: Voeg de listener toe wanneer de component geladen is
 onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown);
-});
-
-// 🗑️ Lifecycle Hook: Verwijder de listener voordat de component wordt vernietigd
-// Dit is CRUCIAAL om memory leaks en dubbele acties te voorkomen.
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeyDown);
-});
+  fetchRandomQuestion()
+  window.addEventListener('keydown', handleKeyDown)
+})
+onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown))
 </script>
 
 <template>
-<div class="min-h-screen">
-<HeaderComponent/>
-<categorieLabelComponent :label="category" vraag="Vraag 1" />
+  <div class="min-h-screen">
+    <HeaderComponent />
+    <div class="starfield">
+      <div id="stars"></div>
+      <div id="stars2"></div>
+      <div id="stars3"></div>
+    </div>
+    <CategorieLabelComponent :label="categoryName" vraag="Vraag" />
 
-<div class="w-full max-w-10xl mx-auto px-4 mt-6">
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 auto-rows-[275px] items-stretch">
-    <XXLButtonComponent label="Antwoord A" :to="antwoord1Route" />
-    <XXLButtonComponent label="Antwoord B" :to="antwoord2Route" />
-    <XXLButtonComponent label="Antwoord C" :to="antwoord3Route" />
-    <XXLButtonComponent label="Antwoord D" :to="antwoord4Route" />
+    <div v-if="loading" class="mt-10 text-center">Vraag wordt geladen...</div>
+    <div v-else-if="!question" class="mt-10 text-center text-red-600">Geen vraag gevonden.</div>
+
+    <div v-else class="w-full max-w-5xl mx-auto px-4 mt-6">
+      <h2 class="text-3xl text-center font-bold mb-6">{{ question.text }}</h2>
+
+      <div class="flex flex-wrap gap-6">
+        <div
+            v-for="choice in choices"
+            :key="choice.id"
+            class="w-full sm:w-[calc(50%-0.75rem)] h-[275px] flex"
+        >
+          <XXLButtonComponent
+              :label="choice.text"
+              :onClick="() => handleChoiceSelect(choice)"
+              class="flex-1"
+          />
+        </div>
+      </div>
+
+
+
+
+    </div>
   </div>
-</div>
-</div>
-<FooterComponent/>
+  <FooterComponent />
 </template>
-
-<style scoped>
-
-</style>
