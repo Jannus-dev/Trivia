@@ -1,96 +1,120 @@
 <script setup lang="ts">
 import { useRoute } from '#imports'
-const route = useRoute()
-
 import { supabase } from '../../utils/supabase'
-
 import { onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-// 1. Initialiseer de Nuxt Router
+const route = useRoute();
 const router = useRouter();
 
-// 2. Definieer de 'category' variabele (pas dit aan op basis van hoe je deze variabele vult)
-// Dit is nodig om de volledige URL's op te bouwen.
-const category = ref(route.query.category ? String(route.query.category) : 'Onbekende categorie');
+// URL category (naam)
+const categoryName = ref(route.query.category ? String(route.query.category) : '');
 
-// 3. Definieer de vier specifieke target URLs
-// Deze URL's zijn statisch voor de huidige vraag en komen exact overeen met de ':to' props.
-const antwoord1Route = `/resultaten?category=${encodeURIComponent(category.value)}&score=1`;
-const antwoord2Route = `/resultaten?category=${encodeURIComponent(category.value)}&score=0`;
-const antwoord3Route = `/resultaten?category=${encodeURIComponent(category.value)}&score=0`;
-const antwoord4Route = `/resultaten?category=${encodeURIComponent(category.value)}&score=0`;
+// RANDOM vraag + keuzes
+const question = ref(null as any);
+const choices = ref([] as any[]);
 
-/**
- * Stuurt de gebruiker door naar de resultatenpagina via de router.
- * Dit simuleert de actie van het klikken op de knop.
- * @param targetRoute - De URL (de waarde van de :to prop) waarnaar genavigeerd moet worden.
- */
-const navigeerNaarAntwoord = (targetRoute: string) => {
-  // Gebruik router.push() om de navigatie programmatisch uit te voeren
-  router.push(targetRoute);
-};
+// 🔥 Stap 1 — Haal Categorie ID op
+async function fetchCategoryId() {
+  const { data, error } = await supabase
+      .from('category')
+      .select('id')
+      .eq('name', categoryName.value)
+      .single();
 
-/**
- * Hoofdfunctie om toetsaanslagen te verwerken.
- */
-const handleKeyDown = (event: KeyboardEvent) => {
-  // AANBEVOLEN: Negeer de toetsaanslag als de gebruiker in een invoerveld typt
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement).tagName)) {
+  if (error || !data) {
+    console.error("Categorie niet gevonden:", error);
+    return null;
+  }
+  return data.id;
+}
+
+// 🔥 Stap 2 — Haal random vraag binnen categorie op
+async function fetchRandomQuestion() {
+  const categoryId = await fetchCategoryId();
+  if (!categoryId) return;
+
+  const { data: questions, error } = await supabase
+      .from('quistion')
+      .select('*')
+      .eq('catagory_id', categoryId);
+
+  if (error || !questions?.length) {
+    console.error("Geen vragen gevonden", error);
     return;
   }
 
-  // Wijs de toetsen 1 t/m 4 toe aan de bijbehorende URL
-  switch (event.key) {
-    case '1':
-      event.preventDefault(); // Voorkom standaard browseracties
-      navigeerNaarAntwoord(antwoord1Route);
-      break;
-    case '2':
-      event.preventDefault();
-      navigeerNaarAntwoord(antwoord2Route);
-      break;
-    case '3':
-      event.preventDefault();
-      navigeerNaarAntwoord(antwoord3Route);
-      break;
-    case '4':
-      event.preventDefault();
-      navigeerNaarAntwoord(antwoord4Route);
-      break;
-    default:
-      break;
+  // Random index
+  const randIndex = Math.floor(Math.random() * questions.length);
+  question.value = questions[randIndex];
+
+  // Haal keuzes op
+  const { data: choiceData } = await supabase
+      .from('choice')
+      .select('*')
+      .eq('quistion_id', question.value.id);
+
+  choices.value = choiceData ?? [];
+}
+
+// 🔥 Start bij laden pagina
+onMounted(async () => {
+  await fetchRandomQuestion();
+});
+
+// KEYBOARD SHORTCUTS — jouw code
+const navigeerNaarAntwoord = (targetRoute: string) => {
+  router.push(targetRoute);
+};
+
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement).tagName)) return;
+
+  // Dynamisch gebaseerd op choices
+  const num = parseInt(event.key);
+  if (num >= 1 && num <= choices.value.length) {
+    const choice = choices.value[num - 1];
+    if (!choice) return;
+
+    const score = choice.is_correct ? 1 : 0;
+    const target = `/resultaten?category=${encodeURIComponent(categoryName.value)}&score=${score}`;
+    event.preventDefault();
+    navigeerNaarAntwoord(target);
   }
 };
 
-// 🌟 Lifecycle Hook: Voeg de listener toe wanneer de component geladen is
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown);
-});
-
-// 🗑️ Lifecycle Hook: Verwijder de listener voordat de component wordt vernietigd
-// Dit is CRUCIAAL om memory leaks en dubbele acties te voorkomen.
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeyDown);
-});
+onMounted(() => window.addEventListener('keydown', handleKeyDown));
+onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
 </script>
 
-<template>
-<div class="min-h-screen">
-<HeaderComponent/>
-<categorieLabelComponent :label="category" vraag="Vraag 1" />
 
-<div class="w-full max-w-10xl mx-auto px-4 mt-6">
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 auto-rows-[275px] items-stretch">
-    <XXLButtonComponent label="Antwoord A" :to="antwoord1Route" />
-    <XXLButtonComponent label="Antwoord B" :to="antwoord2Route" />
-    <XXLButtonComponent label="Antwoord C" :to="antwoord3Route" />
-    <XXLButtonComponent label="Antwoord D" :to="antwoord4Route" />
+<template>
+  <div class="min-h-screen">
+    <HeaderComponent/>
+
+    <categorieLabelComponent :label="categoryName" vraag="Vraag 1" />
+
+    <div v-if="!question" class="text-center mt-10 text-lg">
+      Vraag wordt geladen...
+    </div>
+
+    <div v-else class="w-full max-w-10xl mx-auto px-4 mt-6">
+      <h2 class="text-2xl font-bold mb-4">{{ question.text }}</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 auto-rows-[275px] items-stretch">
+        <XXLButtonComponent
+            v-for="(choice, index) in choices"
+            :key="choice.id"
+            :label="choice.text"
+            :to="`/resultaten?category=${encodeURIComponent(categoryName)}&score=${choice.is_correct ? 1 : 0}`"
+        />
+      </div>
+    </div>
+
+    <FooterComponent/>
   </div>
-</div>
-</div>
-<FooterComponent/>
 </template>
+
 
 <style scoped>
 
