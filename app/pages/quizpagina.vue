@@ -1,105 +1,123 @@
 <script setup lang="ts">
-import { useRoute } from '#imports'
-import { supabase } from '../../utils/supabase'
-import { onMounted, onBeforeUnmount, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from '#imports'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
-const route = useRoute();
-const router = useRouter();
+const { $supabase } = useNuxtApp()
 
-// URL category (naam)
-const categoryName = ref(route.query.category ? String(route.query.category) : '');
+const route = useRoute()
+const router = useRouter()
 
-// RANDOM vraag + keuzes
-const question = ref(null as any);
-const choices = ref([] as any[]);
+// Category naam uit URL
+const categoryName = ref(
+    route.query.category ? String(route.query.category) : ''
+)
 
-// 🔥 Stap 1 — Haal Categorie ID op
+const question = ref<any | null>(null)
+const choices = ref<any[]>([])
+const loading = ref(true)
+
+// 🔥 1. Category ID ophalen
 async function fetchCategoryId() {
-  const { data, error } = await supabase
+  const { data, error } = await $supabase
       .from('category')
       .select('id')
       .eq('name', categoryName.value)
-      .single();
+      .single()
 
   if (error || !data) {
-    console.error("Categorie niet gevonden:", error);
-    return null;
+    console.error('Categorie niet gevonden:', error)
+    return null
   }
-  return data.id;
+
+  return data.id
 }
 
-// 🔥 Stap 2 — Haal random vraag binnen categorie op
+// 🔥 2. Random vraag + keuzes ophalen
 async function fetchRandomQuestion() {
-  const categoryId = await fetchCategoryId();
-  if (!categoryId) return;
+  loading.value = true
 
-  const { data: questions, error } = await supabase
-      .from('quistion')
+  const categoryId = await fetchCategoryId()
+  if (!categoryId) {
+    loading.value = false
+    return
+  }
+
+  const { data: questions, error } = await $supabase
+      .from('question')
       .select('*')
-      .eq('catagory_id', categoryId);
+      .eq('category_id', categoryId)   // ✅ JUISTE kolomnaam
 
   if (error || !questions?.length) {
-    console.error("Geen vragen gevonden", error);
-    return;
+    console.error('Geen vragen gevonden:', error)
+    loading.value = false
+    return
   }
 
-  // Random index
-  const randIndex = Math.floor(Math.random() * questions.length);
-  question.value = questions[randIndex];
+  // Random vraag pakken
+  const randIndex = Math.floor(Math.random() * questions.length)
+  question.value = questions[randIndex]
 
-  // Haal keuzes op
-  const { data: choiceData } = await supabase
+  // Choices ophalen
+  const { data: choiceData } = await $supabase
       .from('choice')
       .select('*')
-      .eq('quistion_id', question.value.id);
+      .eq('question_id', question.value.id)
 
-  choices.value = choiceData ?? [];
+  choices.value = choiceData ?? []
+  loading.value = false
 }
 
-// 🔥 Start bij laden pagina
 onMounted(async () => {
-  await fetchRandomQuestion();
-});
+  await fetchRandomQuestion()
+})
 
-// KEYBOARD SHORTCUTS — jouw code
-const navigeerNaarAntwoord = (targetRoute: string) => {
-  router.push(targetRoute);
-};
 
+// 🔥 Keyboard shortcuts 1–4
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement).tagName)) return;
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement).tagName)) return
 
-  // Dynamisch gebaseerd op choices
-  const num = parseInt(event.key);
+  const num = parseInt(event.key)
   if (num >= 1 && num <= choices.value.length) {
-    const choice = choices.value[num - 1];
-    if (!choice) return;
+    const choice = choices.value[num - 1]
+    if (!choice) return
 
-    const score = choice.is_correct ? 1 : 0;
-    const target = `/resultaten?category=${encodeURIComponent(categoryName.value)}&score=${score}`;
-    event.preventDefault();
-    navigeerNaarAntwoord(target);
+    const score = choice.is_correct ? 1 : 0
+
+    router.push(
+        `/resultaten?category=${encodeURIComponent(categoryName.value)}&score=${score}`
+    )
   }
-};
+}
 
-onMounted(() => window.addEventListener('keydown', handleKeyDown));
-onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
+onMounted(() => window.addEventListener('keydown', handleKeyDown))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown))
 </script>
 
 
 <template>
   <div class="min-h-screen">
-    <HeaderComponent/>
+    <HeaderComponent />
 
-    <categorieLabelComponent :label="categoryName" vraag="Vraag 1" />
+    <categorieLabelComponent
+        :label="categoryName"
+        vraag="Vraag 1"
+    />
 
-    <div v-if="!question" class="text-center mt-10 text-lg">
+    <!-- Loading -->
+    <div v-if="loading" class="text-center mt-10 text-lg">
       Vraag wordt geladen...
     </div>
 
+    <!-- Geen vraag -->
+    <div v-else-if="!question" class="text-center mt-10 text-red-600 text-lg">
+      Geen vraag gevonden.
+    </div>
+
+    <!-- Vraag + keuzes -->
     <div v-else class="w-full max-w-10xl mx-auto px-4 mt-6">
-      <h2 class="text-2xl font-bold mb-4">{{ question.text }}</h2>
+      <h2 class="text-2xl font-bold mb-4">
+        {{ question.text }}
+      </h2>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 auto-rows-[275px] items-stretch">
         <XXLButtonComponent
@@ -111,11 +129,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown));
       </div>
     </div>
 
-    <FooterComponent/>
+    <FooterComponent />
   </div>
 </template>
-
-
-<style scoped>
-
-</style>
