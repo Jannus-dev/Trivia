@@ -1,43 +1,55 @@
 <script setup lang="ts">
-import { useRoute } from '#imports'
-const route = useRoute()
-const category = route.query.category ? String(route.query.category) : 'Onbekende categorie'
-const score = route.query.score ? parseInt(String(route.query.score)) : 0
-const totalQuestions = 5
+import { useRoute, useRouter } from '#imports'
 
+const route = useRoute()
+const router = useRouter()
+
+const isCorrect = route.query.correct === '1'
+const totalAnswered = parseInt(localStorage.getItem('questionCount') || '0')
+const score = parseInt(localStorage.getItem('score') || '0')
+
+const MAX_QUESTIONS = 5
+
+const gaVerder = () => {
+  if (totalAnswered >= MAX_QUESTIONS) {
+    // Quiz klaar → reset en ga naar index
+    localStorage.removeItem('score')
+    localStorage.removeItem('questionCount')
+    localStorage.removeItem('answeredQuestions')
+    router.push('/')
+  } else {
+    // Nog niet 5 → terug naar categorie voor volgende vraag
+    router.push('/categorie')
+  }
+}
 </script>
 
 <template>
- <div class="min-h-screen">
-<HeaderComponent/>
+  <div class="min-h-screen">
+    <HeaderComponent />
 
-<CategorieLabelComponent
-:label="category"
-vraag=""
-/>
+    <CategorieLabelComponent label="Resultaten" vraag="" />
 
-<p class="text-space-tekst text-center text-4xl underline decoration-space-blue decoration-2 rounded-2xl">Resultaten</p>
-<br></br><br></br><br></br><br></br><br></br>
+    <h1 class="text-center text-4xl mt-10 underline decoration-space-blue">
+      {{ isCorrect ? '🎉 Goed gedaan!' : '❌ Helaas fout!' }}
+    </h1>
 
-<div class="flex justify-center">
-  <div class="bg-[url('../img/Blauwbg.svg')] bg-cover bg-center bg-no-repeat text-space-tekst font-bold py-12 px-12 rounded-2xl text-3xl shadow-lg border-2 border-space-purple text-center">
-    <p>Je hebt <span class="text-space-highlight font-bold">{{ score }}</span> van de <span class="text-space-highlight font-bold">{{ totalQuestions }}</span> vragen correct beantwoord!</p>
+    <p class="text-center mt-6 text-lg">
+      Je hebt nu {{ totalAnswered }} van {{ MAX_QUESTIONS }} vragen beantwoord.
+    </p>
+
+    <p class="text-center mt-2 text-xl">
+      Totaal score: {{ score }}
+    </p>
+
+    <div class="flex justify-center mt-16">
+      <button
+          @click="gaVerder"
+          class="px-10 py-4 bg-space-purple text-white text-2xl rounded-2xl font-bold"
+      >
+        {{ totalAnswered >= MAX_QUESTIONS ? 'Einde quiz' : 'Volgende vraag' }}
+      </button>
+    </div>
   </div>
-</div>
-<br></br><br></br><br></br><br></br>
-
-<div class="flex justify-center">
-  <NuxtLink to="/categorie" class="bg-[url('/assets/img/3.png')] ease-in-out border-2 border-space-highlight bg-center bg-cover bg-no-repeat px-8 py-3 rounded-2xl hover:bg-[url('/assets/img/2.png')] transform transition-transform hover:-translate-y-1 duration-600 flex items-center justify-center text-space-tekst font-bold text-xl">
-    Terug naar categoriën
-  </NuxtLink>
-</div>
-<br></br><br></br><br></br><br></br>
-
- </div>
-<FooterComponent/>
-
+  <FooterComponent />
 </template>
-
-<style scoped>
-
-</style>

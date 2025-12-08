@@ -1,5 +1,10 @@
 <script setup lang="ts">
-
+onMounted(() => {
+  localStorage.removeItem('score')
+  localStorage.removeItem('questionCount')
+  localStorage.removeItem('answeredQuestions')
+  localStorage.removeItem('lastCategory')
+})
 </script>
 
 <template>

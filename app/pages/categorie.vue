@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const { $supabase } = useNuxtApp()
 
-
 const { data: categories } = await useAsyncData('categories', async () => {
   const { data, error } = await $supabase
       .from('category')
@@ -11,9 +10,7 @@ const { data: categories } = await useAsyncData('categories', async () => {
   if (error) throw error
   return data
 })
-
 </script>
-
 
 <template>
   <HeaderComponent />
@@ -27,22 +24,14 @@ const { data: categories } = await useAsyncData('categories', async () => {
 
   <div class="max-w-7xl mx-auto w-full">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-10 auto-rows-[250px] items-stretch">
-
-      <!-- Loop door alle categorieën -->
       <BigButtonComponent
           v-for="cat in categories"
           :key="cat.id"
           :label="cat.name"
           :to="`/quizpagina?category=${encodeURIComponent(cat.name)}`"
       />
-
     </div>
   </div>
 
   <FooterComponent />
 </template>
-
-
-<style scoped>
-
-</style>

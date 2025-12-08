@@ -3,20 +3,16 @@ import { useRoute, useRouter } from '#imports'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const { $supabase } = useNuxtApp()
-
 const route = useRoute()
 const router = useRouter()
 
-// Category naam uit URL
-const categoryName = ref(
-    route.query.category ? String(route.query.category) : ''
-)
-
+const categoryName = ref(route.query.category ? String(route.query.category) : '')
 const question = ref<any | null>(null)
 const choices = ref<any[]>([])
 const loading = ref(true)
 
-// 🔥 1. Category ID ophalen
+const MAX_QUESTIONS = 5
+
 async function fetchCategoryId() {
   const { data, error } = await $supabase
       .from('category')
@@ -28,14 +24,11 @@ async function fetchCategoryId() {
     console.error('Categorie niet gevonden:', error)
     return null
   }
-
   return data.id
 }
 
-// 🔥 2. Random vraag + keuzes ophalen
 async function fetchRandomQuestion() {
   loading.value = true
-
   const categoryId = await fetchCategoryId()
   if (!categoryId) {
     loading.value = false
@@ -45,7 +38,7 @@ async function fetchRandomQuestion() {
   const { data: questions, error } = await $supabase
       .from('question')
       .select('*')
-      .eq('category_id', categoryId)   // ✅ JUISTE kolomnaam
+      .eq('category_id', categoryId)
 
   if (error || !questions?.length) {
     console.error('Geen vragen gevonden:', error)
@@ -53,11 +46,17 @@ async function fetchRandomQuestion() {
     return
   }
 
-  // Random vraag pakken
-  const randIndex = Math.floor(Math.random() * questions.length)
-  question.value = questions[randIndex]
+  const answeredIds = JSON.parse(localStorage.getItem('answeredQuestions') || '[]')
+  const remainingQuestions = questions.filter(q => !answeredIds.includes(q.id))
+  if (!remainingQuestions.length) {
+    console.warn('Alle vragen in deze categorie zijn al beantwoord')
+    loading.value = false
+    return
+  }
 
-  // Choices ophalen
+  const randIndex = Math.floor(Math.random() * remainingQuestions.length)
+  question.value = remainingQuestions[randIndex]
+
   const { data: choiceData } = await $supabase
       .from('choice')
       .select('*')
@@ -67,68 +66,69 @@ async function fetchRandomQuestion() {
   loading.value = false
 }
 
-onMounted(async () => {
-  await fetchRandomQuestion()
-})
+const handleChoiceSelect = (choice: any) => {
+  const isCorrect = choice.is_correct ? 1 : 0
+  const currentScore = parseInt(localStorage.getItem('score') || '0')
+  const currentCount = parseInt(localStorage.getItem('questionCount') || '0')
 
+  localStorage.setItem('score', String(currentScore + isCorrect))
+  localStorage.setItem('questionCount', String(currentCount + 1))
 
-// 🔥 Keyboard shortcuts 1–4
+  const answered = JSON.parse(localStorage.getItem('answeredQuestions') || '[]')
+  answered.push(question.value.id)
+  localStorage.setItem('answeredQuestions', JSON.stringify(answered))
+
+  localStorage.setItem('lastCategory', categoryName.value)
+
+  router.push(`/resultaten?correct=${isCorrect}`)
+}
+
+// keyboard shortcuts
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement).tagName)) return
-
+  if (['INPUT','TEXTAREA','SELECT'].includes((event.target as HTMLElement).tagName)) return
   const num = parseInt(event.key)
   if (num >= 1 && num <= choices.value.length) {
-    const choice = choices.value[num - 1]
-    if (!choice) return
-
-    const score = choice.is_correct ? 1 : 0
-
-    router.push(
-        `/resultaten?category=${encodeURIComponent(categoryName.value)}&score=${score}`
-    )
+    handleChoiceSelect(choices.value[num - 1])
   }
 }
 
-onMounted(() => window.addEventListener('keydown', handleKeyDown))
+onMounted(() => {
+  fetchRandomQuestion()
+  window.addEventListener('keydown', handleKeyDown)
+})
 onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown))
 </script>
-
 
 <template>
   <div class="min-h-screen">
     <HeaderComponent />
 
-    <categorieLabelComponent
-        :label="categoryName"
-        vraag="Vraag 1"
-    />
+    <CategorieLabelComponent :label="categoryName" vraag="Vraag" />
 
-    <!-- Loading -->
-    <div v-if="loading" class="text-center mt-10 text-lg">
-      Vraag wordt geladen...
-    </div>
+    <div v-if="loading" class="mt-10 text-center">Vraag wordt geladen...</div>
+    <div v-else-if="!question" class="mt-10 text-center text-red-600">Geen vraag gevonden.</div>
 
-    <!-- Geen vraag -->
-    <div v-else-if="!question" class="text-center mt-10 text-red-600 text-lg">
-      Geen vraag gevonden.
-    </div>
+    <div v-else class="w-full max-w-5xl mx-auto px-4 mt-6">
+      <h2 class="text-3xl text-center font-bold mb-6">{{ question.text }}</h2>
 
-    <!-- Vraag + keuzes -->
-    <div v-else class="w-full max-w-10xl mx-auto px-4 mt-6">
-      <h2 class="text-2xl font-bold mb-4">
-        {{ question.text }}
-      </h2>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 auto-rows-[275px] items-stretch">
-        <XXLButtonComponent
-            v-for="(choice, index) in choices"
+      <div class="flex flex-wrap gap-6">
+        <div
+            v-for="choice in choices"
             :key="choice.id"
-            :label="choice.text"
-            :to="`/resultaten?category=${encodeURIComponent(categoryName)}&score=${choice.is_correct ? 1 : 0}`"
-        />
+            class="w-full sm:w-[calc(50%-0.75rem)] h-[275px] flex"
+        >
+          <XXLButtonComponent
+              :label="choice.text"
+              :onClick="() => handleChoiceSelect(choice)"
+              class="flex-1"
+          />
+        </div>
       </div>
-    </div>
 
-    <FooterComponent />
+
+
+
+    </div>
   </div>
+  <FooterComponent />
 </template>
